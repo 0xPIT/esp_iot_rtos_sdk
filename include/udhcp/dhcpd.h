@@ -71,6 +71,9 @@ struct server_config_t {
 #define SERVER_PORT6 547
 #endif
 
+#ifndef sint32_t
+typedef signed long         sint32_t;
+#endif
 
 typedef uint32_t leasetime_t;
 typedef sint32_t signed_leasetime_t;

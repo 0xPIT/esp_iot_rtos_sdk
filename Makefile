@@ -8,7 +8,7 @@ ifeq ($(COMPILE), gcc)
 	AR = xtensa-lx106-elf-ar
 	CC = xtensa-lx106-elf-gcc
 	NM = xtensa-lx106-elf-nm
-	CPP = xtensa-lx106-elf-cpp
+	CPP = xtensa-lx106-elf-g++
 	OBJCOPY = xtensa-lx106-elf-objcopy
 	OBJDUMP = xtensa-lx106-elf-objdump
 else
@@ -162,6 +162,7 @@ else
 endif
 
 CSRCS ?= $(wildcard *.c)
+CXXSRCS ?= $(wildcard *.cc)
 ASRCs ?= $(wildcard *.s)
 ASRCS ?= $(wildcard *.S)
 SUBDIRS ?= $(patsubst %/,%,$(dir $(wildcard */Makefile)))
@@ -170,10 +171,12 @@ ODIR := .output
 OBJODIR := $(ODIR)/$(TARGET)/$(FLAVOR)/obj
 
 OBJS := $(CSRCS:%.c=$(OBJODIR)/%.o) \
+        $(CXXSRCS:%.cc=$(OBJODIR)/%.o) \
         $(ASRCs:%.s=$(OBJODIR)/%.o) \
         $(ASRCS:%.S=$(OBJODIR)/%.o)
 
 DEPS := $(CSRCS:%.c=$(OBJODIR)/%.d) \
+        $(CXXSRCS:%.cc=$(OBJODIR)/%.d) \
         $(ASRCs:%.s=$(OBJODIR)/%.d) \
         $(ASRCS:%.S=$(OBJODIR)/%.d)
 
@@ -186,7 +189,7 @@ OIMAGES := $(GEN_IMAGES:%=$(IMAGEODIR)/%)
 BINODIR := $(ODIR)/$(TARGET)/$(FLAVOR)/bin
 OBINS := $(GEN_BINS:%=$(BINODIR)/%)
 
-CCFLAGS += 			\
+CCFLAGS += \
 	-g			\
 	-O2			\
 	-Wpointer-arith		\
@@ -201,7 +204,7 @@ CCFLAGS += 			\
 
 CFLAGS = $(CCFLAGS) $(DEFINES) $(EXTRA_CCFLAGS) $(INCLUDES)
 DFLAGS = $(CCFLAGS) $(DDEFINES) $(EXTRA_CCFLAGS) $(INCLUDES)
-
+CXXFLAGS = $(CFLAGS) -fno-rtti -fno-exceptions -felide-constructors
 
 #############################################################
 # Functions
@@ -305,9 +308,6 @@ clobber: $(SPECIAL_CLOBBER)
 .subdirs:
 	@set -e; $(foreach d, $(SUBDIRS), $(MAKE) -C $(d);)
 
-#.subdirs:
-#	$(foreach d, $(SUBDIRS), $(MAKE) -C $(d))
-
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(MAKECMDGOALS),clobber)
 ifdef DEPS
@@ -320,11 +320,23 @@ $(OBJODIR)/%.o: %.c
 	@mkdir -p $(OBJODIR);
 	$(CC) $(if $(findstring $<,$(DSRCS)),$(DFLAGS),$(CFLAGS)) $(COPTS_$(*F)) -o $@ -c $<
 
+$(OBJODIR)/%.o: %.cc
+	@mkdir -p $(OBJODIR);
+	$(CPP) $(if $(findstring $<,$(DSRCS)),$(DFLAGS),$(CXXFLAGS)) $(COPTS_$(*F)) -o $@ -c $<
+
 $(OBJODIR)/%.d: %.c
 	@mkdir -p $(OBJODIR);
 	@echo DEPEND: $(CC) -M $(CFLAGS) $<
 	@set -e; rm -f $@; \
 	$(CC) -M $(CFLAGS) $< > $@.$$$$; \
+	sed 's,\($*\.o\)[ :]*,$(OBJODIR)/\1 $@ : ,g' < $@.$$$$ > $@; \
+	rm -f $@.$$$$
+
+$(OBJODIR)/%.d: %.cc
+	@mkdir -p $(OBJODIR);
+	@echo DEPEND: $(CXX) -M $(CXXFLAGS) $<
+	@set -e; rm -f $@; \
+	$(CPP) -M $(CXXFLAGS) $< > $@.$$$$; \
 	sed 's,\($*\.o\)[ :]*,$(OBJODIR)/\1 $@ : ,g' < $@.$$$$ > $@; \
 	rm -f $@.$$$$
 

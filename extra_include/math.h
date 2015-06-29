@@ -187,8 +187,7 @@ extern int __signbitd (double x);
           (__extension__ ({__typeof__(x) __x = (x); __typeof__(y) __y = (y); \
                            fpclassify(__x) == FP_NAN || fpclassify(__y) == FP_NAN;}))
 
-/* Non ANSI double precision functions.  */
-
+/* Non ANSI double precision functions.  */          
 extern double infinity _PARAMS((void));
 extern double nan _PARAMS((const char *));
 extern int isnan _PARAMS((double));
