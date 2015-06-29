@@ -279,7 +279,7 @@ then the real time is 10 x 5.75 = 57.5 us.
     {
         struct station_config *config = (struct station_config *)zalloc(sizeof(struct station_config));
         sprintf((char *)config->ssid, "pit");
-        sprintf((char *)config->password, "1000101110000");
+        sprintf((char *)config->password, "0000000000000000");
 
         /* need to sure that you are in station mode first,
          * otherwise it will be failed. */
